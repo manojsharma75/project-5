@@ -36,39 +36,24 @@ resource "google_compute_subnetwork" "main_subnet" {
   network       = google_compute_network.main_vpc.self_link
 }
 
-# --- GKE Cluster ---
 resource "google_container_cluster" "primary" {
-  name     = "gke-cluster"
-  location = "us-central1"   # regional cluster
-  deletion_protection = false
-
-  network    = google_compute_network.main_vpc.self_link
-  subnetwork = google_compute_subnetwork.main_subnet.self_link
-
+  name                     = "gke-cluster"
+  location                 = "us-central1"
+  deletion_protection      = false
+  network                  = google_compute_network.main_vpc.id
+  subnetwork               = google_compute_subnetwork.main_subnet.id
   remove_default_node_pool = true
   initial_node_count       = 1
-}
 
-# Node pool with 2 nodes, spread across zones
-resource "google_container_node_pool" "primary_nodes" {
-  name       = "primary-nodes"
-  cluster    = google_container_cluster.primary.name
-  location   = google_container_cluster.primary.location
-
-  node_count = 2
-
+  # ✅ Override default node pool config before it's removed
   node_config {
-    machine_type = "e2-small"   # smallest recommended for GKE nodes
-    # Control disk type and size
-    disk_type    = "pd-ssd"   # or "pd-standard" for HDD
-    disk_size_gb = 10       # smallest allowed size is 10 GB
-
+    machine_type = "e2-small"
+    disk_type    = "pd-standard"  # Prevents SSD quota hit
+    disk_size_gb = 20
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"
     ]
   }
-
-  node_locations = local.zones
 }
 
 # --- Service Networking for Cloud SQL ---
