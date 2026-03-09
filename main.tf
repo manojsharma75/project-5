@@ -42,7 +42,7 @@ resource "google_container_cluster" "primary" {
   deletion_protection      = false
   network                  = google_compute_network.main_vpc.id
   subnetwork               = google_compute_subnetwork.main_subnet.id
-  remove_default_node_pool = true
+  #remove_default_node_pool = true
   initial_node_count       = 1
 
   # ✅ Override default node pool config before it's removed
