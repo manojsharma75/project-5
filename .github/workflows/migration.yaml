@@ -1,0 +1,34 @@
+name: Migrate Pods Between Nodes
+
+on:
+  workflow_dispatch:   # Manual trigger
+
+jobs:
+  migrate-pods:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # ✅ Set up gcloud with your service account JSON stored in GitHub Secrets
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: my-ever-first-project
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          export_default_credentials: true
+
+      # ✅ Authenticate with GKE cluster
+      - name: Authenticate with GKE
+        run: |
+          gcloud container clusters get-credentials gke-cluster \
+            --zone us-central1-b \
+            --project my-ever-first-project
+
+      # ✅ Migrate pods: cordon/drain source node, uncordon target node
+      - name: Migrate pods from node-1 to node-2
+        run: |
+          kubectl cordon gke-gke-cluster-default-pool-b7584123-2gvm
+          kubectl drain gke-gke-cluster-default-pool-b7584123-2gvm --ignore-daemonsets --delete-emptydir-data --force
+          kubectl uncordon gke-gke-cluster-default-pool-4604f0ad-mzn6
